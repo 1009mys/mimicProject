@@ -26,7 +26,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from copy import deepcopy
 
 import datetime
-
+from pytorchtools import EarlyStopping
 import torchsummary
 
 import wandb
@@ -189,6 +189,7 @@ def trainEffNet(parser):
     best_acc_model = None 
     best_f1_model = None
    
+    early_stopping = EarlyStopping(patience = 20, verbose = True)
 
     for epoch in range(num_epoch):
         model.train()
@@ -332,7 +333,6 @@ def trainEffNet(parser):
         test_loss = 0
         correct = 0
         
-        loss_func
 
         guesses = np.array([])
         labels = np.array([])
@@ -432,7 +432,8 @@ def trainEffNet(parser):
                     labels = np.append(labels, tt2)
                     #scores = np.append(scores, tt3)
         if only_triage == True:
-            for idx, (x_CC_token_input_ids, 
+            with torch.no_grad():
+                for idx, (x_CC_token_input_ids, 
                     x_CC_token_attention_mask, 
                     x_CC_token_token_type_ids, 
                     x_heartrate, 
@@ -491,86 +492,12 @@ def trainEffNet(parser):
                     guesses = np.append(guesses, tt1)
                     labels = np.append(labels, tt2)
                     #scores = np.append(scores, tt3)
-            """
-            if data_CC == False and data_Seq == False:
-                for idx, (data, target) in enumerate(test_loader):
-                    data, target = data.to(torch.device('cuda')), target.to(torch.device('cuda'))
-                    #target = target.float()
-                    data=data.float()
-                    output = model(data)
-                    #print(output, target)
-                    
-                    lossT = loss_func(output, target)
-                    test_loss +=  lossT.item()
-                    pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
-                    correct += pred.eq(target.view_as(pred)).sum().item()
-
-                    tmp1 = np.array(pred.to('cpu'))
-                    tmp2 = np.array(target.to('cpu'))
-
-                    tt1 = np.array(tmp1[:])
-                    tt2 = np.array(tmp2[:])
-
-                    guesses = np.append(guesses, tt1)
-                    labels = np.append(labels, tt2)
-
-                    #print(len(guesses))
-            elif data_CC ==True and data_Seq == True:
-                for idx, (
-                    x_CC_token_input_ids, 
-                    x_CC_token_attention_mask, 
-                    x_CC_token_token_type_ids, 
-                    x_dbp, 
-                    x_sbp, 
-                    x_o2sat, 
-                    x_resparate, 
-                    x_heartrate, 
-                    x_numerical, 
-                    target
-                    ) in enumerate(test_loader):
-
-                    x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
-                    x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
-                    x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long() 
-                    x_dbp = x_dbp.to(device).to(torch.float32)
-                    x_sbp = x_sbp.to(device).to(torch.float32)
-                    x_o2sat = x_o2sat.to(device).to(torch.float32)
-                    x_resparate = x_resparate.to(device).to(torch.float32)
-                    x_heartrate = x_heartrate.to(device).to(torch.float32)
-                    x_numerical = x_numerical.to(device).to(torch.float32)
-                    target = target.to(device)
-
-                    output = model.forward(
-                        x_CC_token_input_ids,
-                        x_CC_token_attention_mask,
-                        x_CC_token_token_type_ids,
-                        x_dbp,
-                        x_sbp,
-                        x_o2sat,
-                        x_resparate,
-                        x_heartrate,
-                        x_numerical
-                        )
-                    target = target.view(target.size(0),1).float()
-                    lossT = loss_func(output, target)
-                    test_loss +=  lossT.item()
-                    #pred = output.argmax(dim=1, keepdim=True)
-                    #pred = output.threshold(0.5, 1)
-                    #s = score.argmax(dim=1, keepdim=True)
-
-                    tmp1 = np.array(output.to('cpu'))
-                    tmp2 = np.array(target.to('cpu'))
-                    #tmp3 = np.array(s.to('cpu'))
-
-                    tt1 = np.array(tmp1[:])
-                    tt2 = np.array(tmp2[:])
-                    #tt3 = np.array(tmp3[:])
-
-                    guesses = np.append(guesses, tt1)
-                    labels = np.append(labels, tt2)
-                    #scores = np.append(scores, tt3)
-            """
                 
+        early_stopping(test_loss, model)
+
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
 
         #guesses = guesses.astype(int)
         #labels = labels.astype(int)
@@ -607,7 +534,7 @@ def trainEffNet(parser):
 
         print(classification_report(labels, guesses, labels=[0,1]))
 
-        with open( save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + ".txt", "w") as text_file:
+        with open(save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + ".txt", "w") as text_file:
             print("epoch:", epoch, file=text_file)
             print("test loss:", test_loss, file=text_file)
             print(classification_report(labels, guesses, digits=3), file=text_file)
