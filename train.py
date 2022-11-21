@@ -16,11 +16,12 @@ import torchvision.datasets as dset # toy data들을 이용하기 위해서
 import torchvision.transforms as transforms # pytorch 모델을 위한 데이터 변환을 위해
 from torch.utils.data import DataLoader # train,test 데이터를 loader객체로 만들어주기 위해서
 
-from dataloader import MimicLoader
+from dataloader import MimicLoader, MimicLoader_dataset1, MimicLoader_dataset1_onlyTriage
 from model import TestModel, TestModel2
-from model_maac import MAAC, encoder
+from model_maac import MAAC, encoder, MACCwithTransformer, MAAC_onlyTriage
 
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, classification_report
+from sklearn.metrics import roc_curve, roc_auc_score
 
 from copy import deepcopy
 
@@ -28,7 +29,9 @@ import datetime
 
 import torchsummary
 
+import wandb
 
+import matplotlib.pyplot as plt
 
 
 
@@ -44,6 +47,14 @@ def trainEffNet(parser):
     data = options.data
     result_name = options.result_name
     loss_function = options.loss_function
+    save_dir = options.save_dir
+
+    if options.only_triage == 'True':
+        only_triage = True
+    else:
+        only_triage = False
+
+
     if options.data_CC == 'True':
         data_CC = True
     else:
@@ -53,6 +64,8 @@ def trainEffNet(parser):
         data_Seq = True
     else:
         data_Seq = False
+
+    wandb.init()
 
     #pre_trained = options.pre_trained
 
@@ -70,24 +83,35 @@ def trainEffNet(parser):
                     #transforms.GaussianBlur(kernel_size=3),
                     #transforms.RandomRotation(degrees=[0,360]),
                     #transforms.ColorJitter(brightness=0.2)
-
-
-
     ])
 
-    mimicTrain = MimicLoader(
-        data_CC=data_CC, 
-        data_Seq=data_Seq, 
-        annotations_file=data, 
-        transform=train_transformer, 
-        train=True)
-
-    mimicTest = MimicLoader(
-        data_CC=data_CC, 
-        data_Seq=data_Seq,
-        annotations_file=data, 
-        train=False)
+    if only_triage == False:
+        mimicTrain = MimicLoader_dataset1(
+            data_CC=data_CC, 
+            data_Seq=data_Seq, 
+            annotations_file=data, 
+            transform=train_transformer, 
+            train=True)
+        mimicTest = MimicLoader_dataset1(
+            data_CC=data_CC, 
+            data_Seq=data_Seq,
+            annotations_file=data, 
+            train=False)
+    else:
+        mimicTrain = MimicLoader_dataset1_onlyTriage(
+            data_CC=data_CC, 
+            data_Seq=data_Seq, 
+            annotations_file=data, 
+            transform=train_transformer, 
+            train=True)
+        mimicTest = MimicLoader_dataset1_onlyTriage(
+            data_CC=data_CC, 
+            data_Seq=data_Seq,
+            annotations_file=data, 
+            train=False)
     
+    
+    #print(mimicTrain.__len__())
 
 
     # Data loader 객체 생성
@@ -107,23 +131,29 @@ def trainEffNet(parser):
                              drop_last=False,
                              pin_memory=True
                              )
-    
+    device = torch.device("cuda")
    
     
-    if modelNum == '1':
-        model = TestModel()
-    elif modelNum == '2':
-        model = TestModel2()
-    elif modelNum == 'macc':
+    
+    if modelNum == 'macc':
+        if only_triage == False:
+            encoderModel = encoder(encoder_pretrained=True)
+            #print(encoderModel)
+            model = MAAC(encoderModel)
+        else:
+            encoderModel = encoder(encoder_pretrained=True)
+            #print(encoderModel)
+            model = MAAC_onlyTriage(encoderModel)
+
+    elif modelNum == 'maccwithTransformer':
         encoderModel = encoder(encoder_pretrained=True)
-        #print(encoderModel)
-        model = MAAC(encoderModel=encoderModel)
+        model = MACCwithTransformer(encoderModel)
         
 
     #print(model)
 
     NGPU = torch.cuda.device_count()
-    device = torch.device("cuda")
+    
 
     model = nn.DataParallel(model)   # 4개의 GPU를 이용할 경우 pre_trained
 
@@ -133,14 +163,15 @@ def trainEffNet(parser):
     print(sys.version)
     print("-------------------------")
 
-    model.to(device)
+    model = model.to(device)
 
-    #print(model)
+    print(model)
 
 
     loss_func = None
     if loss_function == 'criterion':
-        loss_func = nn.CrossEntropyLoss()  # 크로스엔트로피 loss 객체, softmax를 포함함
+        #loss_func = nn.CrossEntropyLoss()  # 크로스엔트로피 loss 객체, softmax를 포함함
+        loss_func = nn.BCELoss()
     elif loss_function == 'MSE':
         loss_func = nn.MSELoss()
     else:
@@ -161,100 +192,134 @@ def trainEffNet(parser):
 
     for epoch in range(num_epoch):
         model.train()
-
-        if data_CC == False and data_Seq == False:
-
-            for idx, (xx, label) in enumerate(train_loader):
-                x = xx.to(device)
-                x = x.float()
-                #label = label.float()
-                # label = list(label)
-                y_ = label.to(device)
-                
-                #print(x.shape)
-
-                # train데이터 셋 feedforwd 과정
-                output = model.forward(x)
-
-                #print(output.shape, y_.shape)
-
-                # loss 계산
-                loss = loss_func(output, y_)
-
-                # optimizer 초기화 및 weight 업데이트
-                optimizer.zero_grad()  # 그래디언트 제로로 만들어주는 과정
-                #f = loss.mean()
-                loss.backward()  # backpropagation
-                
-                #loss.mean().backward()
-                optimizer.step()
-
-
-                #if idx % 100 == 0:
-
-        elif data_CC ==True and data_Seq == True:
-            for idx, (
-                x_CC_token_input_ids, 
+        if only_triage == False:
+            for i , (x_CC_token_input_ids, 
                 x_CC_token_attention_mask, 
                 x_CC_token_token_type_ids, 
-                x_dbp, 
-                x_sbp, 
-                x_o2sat, 
-                x_resparate, 
                 x_heartrate, 
-                x_numerical, 
-                label
-                ) in enumerate(train_loader):
-                """
-                print(x_CC_token_input_ids.shape)
-                print(x_CC_token_attention_mask.shape)
-                print(x_CC_token_token_type_ids.shape)
-                print(x_dbp.shape)
-                print(x_sbp.shape)
-                print(x_o2sat.shape)
-                print(x_resparate.shape)
-                print(x_heartrate.shape)
-                print(x_numerical.shape)
-                print(label.shape)
-                """
+                x_resparate, 
+                x_o2sat, 
+                x_sbp, 
+                x_dbp, 
+                x_numerical1, 
+                Bicarbonate, 
+                Creatinine, 
+                Glucose, 
+                Hematocrit, 
+                Platelet, 
+                Potassium, 
+                Sodium, 
+                Urea_Nitrogen, 
+                white_blood_cell, 
+                pCO2, 
+                pH, 
+                Bilirubin, 
+                x_numerical2, 
+                y) in enumerate(train_loader):
 
-                #print(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids, x_dbp.shape, x_sbp.shape, x_o2sat.shape, x_resparate.shape, x_heartrate.shape, x_numerical.shape, label.shape)
                 x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
                 x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
                 x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long()
-                x_dbp = x_dbp.to(device).to(torch.float32)
-                x_sbp = x_sbp.to(device).to(torch.float32)
-                x_o2sat = x_o2sat.to(device).to(torch.float32)
-                x_resparate = x_resparate.to(device).to(torch.float32)
-                x_heartrate = x_heartrate.to(device).to(torch.float32)
-                x_numerical = x_numerical.to(device).to(torch.float32)
-                y_ = label.to(device)
+                x_heartrate = x_heartrate.to(device).float()
+                x_resparate = x_resparate.to(device).float()
+                x_o2sat = x_o2sat.to(device).float()
+                x_sbp = x_sbp.to(device).float()
+                x_dbp = x_dbp.to(device).float()
+                x_numerical1 = x_numerical1.to(device).float()
+                Bicarbonate = Bicarbonate.to(device).float()
+                Creatinine = Creatinine.to(device).float()
+                Glucose = Glucose.to(device).float()
+                Hematocrit = Hematocrit.to(device).float()
+                Platelet = Platelet.to(device).float()
+                Potassium = Potassium.to(device).float()
+                Sodium = Sodium.to(device).float()
+                Urea_Nitrogen = Urea_Nitrogen.to(device).float()
+                white_blood_cell = white_blood_cell.to(device).float()
+                pCO2 = pCO2.to(device).float()
+                pH = pH.to(device).float()
+                Bilirubin = Bilirubin.to(device).float()
+                x_numerical2 = x_numerical2.to(device).float()
 
-                
-                #print(x.shape)
 
-                # train데이터 셋 feedforwd 과정
-                output = model.forward(
-                    x_CC_token_input_ids,
-                    x_CC_token_attention_mask,
-                    x_CC_token_token_type_ids,
-                    x_dbp,
-                    x_sbp,
-                    x_o2sat,
-                    x_resparate,
-                    x_heartrate,
-                    x_numerical
-                    )
+                y = y.to(device).float()
 
-                #print(output.shape, y_.shape)
+                output = model.forward(x_CC_token_input_ids, 
+                    x_CC_token_attention_mask, 
+                    x_CC_token_token_type_ids, 
+                    x_heartrate, 
+                    x_resparate, 
+                    x_o2sat, 
+                    x_sbp, 
+                    x_dbp, 
+                    x_numerical1, 
+                    Bicarbonate, 
+                    Creatinine, 
+                    Glucose, 
+                    Hematocrit, 
+                    Platelet, 
+                    Potassium, 
+                    Sodium, 
+                    Urea_Nitrogen, 
+                    white_blood_cell, 
+                    pCO2, 
+                    pH, 
+                    Bilirubin, 
+                    x_numerical2)
 
-                # loss 계산
-                loss = loss_func(output, y_)
+                output = output.view(output.size(0))
 
-                # optimizer 초기화 및 weight 업데이트
+                loss = loss_func(output, y)
+
                 optimizer.zero_grad()
 
-                loss.backward()  # backpropagation
+                loss.backward()
+
+                optimizer.step()
+
+        if only_triage == True:
+            for i , (x_CC_token_input_ids, 
+                x_CC_token_attention_mask, 
+                x_CC_token_token_type_ids, 
+                x_heartrate, 
+                x_resparate, 
+                x_o2sat, 
+                x_sbp, 
+                x_dbp, 
+                x_gender,
+                x_acuity, y) in enumerate(train_loader):
+
+                x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
+                x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
+                x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long()
+                x_heartrate = x_heartrate.to(device).float()
+                x_resparate = x_resparate.to(device).float()
+                x_o2sat = x_o2sat.to(device).float()
+                x_sbp = x_sbp.to(device).float()
+                x_dbp = x_dbp.to(device).float()
+                x_gender = x_gender.to(device).float()
+                x_acuity = x_acuity.to(device).float()
+
+
+                y = y.to(device).float()
+
+                output = model.forward(x_CC_token_input_ids, 
+                    x_CC_token_attention_mask, 
+                    x_CC_token_token_type_ids, 
+                    x_heartrate, 
+                    x_resparate, 
+                    x_o2sat, 
+                    x_sbp, 
+                    x_dbp, 
+                    x_gender,
+                    x_acuity)
+
+                output = output.view(output.size(0))
+
+                loss = loss_func(output, y)
+
+                optimizer.zero_grad()
+
+                loss.backward()
 
                 optimizer.step()
 
@@ -271,8 +336,162 @@ def trainEffNet(parser):
 
         guesses = np.array([])
         labels = np.array([])
+        if only_triage == False:
+            with torch.no_grad():
+                for idx, (x_CC_token_input_ids, 
+                    x_CC_token_attention_mask, 
+                    x_CC_token_token_type_ids, 
+                    x_heartrate, 
+                    x_resparate, 
+                    x_o2sat, 
+                    x_sbp, 
+                    x_dbp, 
+                    x_numerical1, 
+                    Bicarbonate, 
+                    Creatinine, 
+                    Glucose, 
+                    Hematocrit, 
+                    Platelet, 
+                    Potassium, 
+                    Sodium, 
+                    Urea_Nitrogen, 
+                    white_blood_cell, 
+                    pCO2, 
+                    pH, 
+                    Bilirubin, 
+                    x_numerical2, 
+                    label) in enumerate(test_loader):
 
-        with torch.no_grad():
+                    x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
+                    x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
+                    x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long()
+                    x_heartrate = x_heartrate.to(device).float()
+                    x_resparate = x_resparate.to(device).float()
+                    x_o2sat = x_o2sat.to(device).float()
+                    x_sbp = x_sbp.to(device).float()
+                    x_dbp = x_dbp.to(device).float()
+                    x_numerical1 = x_numerical1.to(device).float()
+                    Bicarbonate = Bicarbonate.to(device).float()
+                    Creatinine = Creatinine.to(device).float()
+                    Glucose = Glucose.to(device).float()
+                    Hematocrit = Hematocrit.to(device).float()
+                    Platelet = Platelet.to(device).float()
+                    Potassium = Potassium.to(device).float()
+                    Sodium = Sodium.to(device).float()
+                    Urea_Nitrogen = Urea_Nitrogen.to(device).float()
+                    white_blood_cell = white_blood_cell.to(device).float()
+                    pCO2 = pCO2.to(device).float()
+                    pH = pH.to(device).float()
+                    Bilirubin = Bilirubin.to(device).float()
+                    x_numerical2 = x_numerical2.to(device).float()
+
+                    target = label.to(device).float()
+                    
+                    #print(x.shape)
+
+                    # train데이터 셋 feedforwd 과정
+                    output = model.forward(x_CC_token_input_ids, 
+                        x_CC_token_attention_mask, 
+                        x_CC_token_token_type_ids, 
+                        x_heartrate, 
+                        x_resparate, 
+                        x_o2sat, 
+                        x_sbp, 
+                        x_dbp, 
+                        x_numerical1, 
+                        Bicarbonate, 
+                        Creatinine, 
+                        Glucose, 
+                        Hematocrit, 
+                        Platelet, 
+                        Potassium, 
+                        Sodium, 
+                        Urea_Nitrogen, 
+                        white_blood_cell, 
+                        pCO2, 
+                        pH, 
+                        Bilirubin, 
+                        x_numerical2)
+
+                    output = output.view(output.size(0))
+                    lossT = loss_func(output, target)
+                    test_loss +=  lossT.item()
+                    #pred = output.argmax(dim=1, keepdim=True)
+                    #pred = output.threshold(0.5, 1)
+                    #s = score.argmax(dim=1, keepdim=True)
+
+                    tmp1 = np.array(output.to('cpu'))
+                    tmp2 = np.array(target.to('cpu'))
+                    #tmp3 = np.array(s.to('cpu'))
+
+                    tt1 = np.array(tmp1[:])
+                    tt2 = np.array(tmp2[:])
+                    #tt3 = np.array(tmp3[:])
+
+                    guesses = np.append(guesses, tt1)
+                    labels = np.append(labels, tt2)
+                    #scores = np.append(scores, tt3)
+        if only_triage == True:
+            for idx, (x_CC_token_input_ids, 
+                    x_CC_token_attention_mask, 
+                    x_CC_token_token_type_ids, 
+                    x_heartrate, 
+                    x_resparate, 
+                    x_o2sat, 
+                    x_sbp, 
+                    x_dbp, 
+                    x_gender,
+                    x_acuity, label) in enumerate(test_loader):
+
+                    x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
+                    x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
+                    x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long()
+                    x_heartrate = x_heartrate.to(device).float()
+                    x_resparate = x_resparate.to(device).float()
+                    x_o2sat = x_o2sat.to(device).float()
+                    x_sbp = x_sbp.to(device).float()
+                    x_dbp = x_dbp.to(device).float()
+                    x_gender = x_gender.to(device).float()
+                    x_acuity = x_acuity.to(device).float()
+
+                    target = label.to(device).float()
+                    
+                    #print(x.shape)
+
+                    # train데이터 셋 feedforwd 과정
+                    output = model.forward(x_CC_token_input_ids, 
+                        x_CC_token_attention_mask, 
+                        x_CC_token_token_type_ids, 
+                        x_heartrate, 
+                        x_resparate, 
+                        x_o2sat, 
+                        x_sbp, 
+                        x_dbp, 
+                        x_gender,
+                        x_acuity)
+
+                    output = output.view(output.size(0))
+                    lossT = loss_func(output, target)
+                    test_loss +=  lossT.item()
+                    #pred = output.argmax(dim=1, keepdim=True)
+                    #pred = output.threshold(0.5, 1)
+                    #s = score.argmax(dim=1, keepdim=True)
+
+                    #tmp1 = np.array(output.to('cpu'))
+                    #tmp2 = np.array(target.to('cpu'))
+                    tmp1 = output.to('cpu').detach().numpy()
+                    tmp2 = target.to('cpu').detach().numpy()
+
+                    #tmp3 = np.array(s.to('cpu'))
+
+                    tt1 = np.array(tmp1[:])
+                    tt2 = np.array(tmp2[:])
+                    #tt3 = np.array(tmp3[:])
+
+                    guesses = np.append(guesses, tt1)
+                    labels = np.append(labels, tt2)
+                    #scores = np.append(scores, tt3)
+            """
             if data_CC == False and data_Seq == False:
                 for idx, (data, target) in enumerate(test_loader):
                     data, target = data.to(torch.device('cuda')), target.to(torch.device('cuda'))
@@ -280,6 +499,7 @@ def trainEffNet(parser):
                     data=data.float()
                     output = model(data)
                     #print(output, target)
+                    
                     lossT = loss_func(output, target)
                     test_loss +=  lossT.item()
                     pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
@@ -312,13 +532,13 @@ def trainEffNet(parser):
                     x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
                     x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
                     x_CC_token_token_type_ids = x_CC_token_token_type_ids.to(device).long() 
-                    x_dbp = x_dbp.to(device)
-                    x_sbp = x_sbp.to(device)
-                    x_o2sat = x_o2sat.to(device)
-                    x_resparate = x_resparate.to(device)
-                    x_heartrate = x_heartrate.to(device)
-                    x_numerical = x_numerical.to(device)
-                    y_ = target.to(device)
+                    x_dbp = x_dbp.to(device).to(torch.float32)
+                    x_sbp = x_sbp.to(device).to(torch.float32)
+                    x_o2sat = x_o2sat.to(device).to(torch.float32)
+                    x_resparate = x_resparate.to(device).to(torch.float32)
+                    x_heartrate = x_heartrate.to(device).to(torch.float32)
+                    x_numerical = x_numerical.to(device).to(torch.float32)
+                    target = target.to(device)
 
                     output = model.forward(
                         x_CC_token_input_ids,
@@ -331,61 +551,99 @@ def trainEffNet(parser):
                         x_heartrate,
                         x_numerical
                         )
-
+                    target = target.view(target.size(0),1).float()
                     lossT = loss_func(output, target)
                     test_loss +=  lossT.item()
-                    pred = output.argmax(dim=1, keepdim=True)
+                    #pred = output.argmax(dim=1, keepdim=True)
+                    #pred = output.threshold(0.5, 1)
+                    #s = score.argmax(dim=1, keepdim=True)
 
-                    tmp1 = np.array(pred.to('cpu'))
+                    tmp1 = np.array(output.to('cpu'))
                     tmp2 = np.array(target.to('cpu'))
+                    #tmp3 = np.array(s.to('cpu'))
 
                     tt1 = np.array(tmp1[:])
                     tt2 = np.array(tmp2[:])
+                    #tt3 = np.array(tmp3[:])
 
                     guesses = np.append(guesses, tt1)
                     labels = np.append(labels, tt2)
+                    #scores = np.append(scores, tt3)
+            """
                 
 
         #guesses = guesses.astype(int)
-        labels = labels.astype(int)
-        guesses = guesses.astype(int)
+        #labels = labels.astype(int)
+        #guesses = guesses.astype(int)
 
         guesses = list(guesses)
-        labels = list(labels)
+        total = 0
+        for g in guesses:
+            total += g
 
-        #print(guesses,'\n',labels)
+        
+        total /= len(guesses)
+
+        print(guesses[:100])
+        print(labels[:100])
+
+        ff = [int(l) for l in labels]
+
+        #print(guesses)
+        guesses = [0 if guesses[i] <= 0.5 else 1 for i in range(len(guesses))]
+        labels =  [0 if labels[i] <= 0.5 else 1 for i in range(len(labels))]
+        #print(total)
+
+
+        #guesses = list(guesses)
+        #labels = list(labels)
+
+        #scores = list(scores)
+
+        #print(scores,'\n',labels)
+
+        acc = accuracy_score(labels, guesses)
+        f_score = f1_score(labels, guesses, average='macro')
 
         print(classification_report(labels, guesses, labels=[0,1]))
 
+        with open( save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + ".txt", "w") as text_file:
+            print("epoch:", epoch, file=text_file)
+            print("test loss:", test_loss, file=text_file)
+            print(classification_report(labels, guesses, digits=3), file=text_file)
+            print(model, file=text_file)
+            print("average", total, file=text_file)
+        
+        torch.save(best_acc_model, save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + '.pt')
+
         #misc (acc 계산, etc) 
-        acc = accuracy_score(labels, guesses)
-        f_score = f1_score(labels, guesses, average='macro')
-        
-        
 
         if acc > best_acc:
             best_acc = acc
             best_acc_model = deepcopy(model.state_dict())
 
-            with open('./result/' + result_name + "_" + str(now) + "_best_acc.txt", "w") as text_file:
+
+            with open( save_dir + '/' + result_name + "_" + str(now) + "_best_acc.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
+                print("average", total, file=text_file)
             
-            torch.save(best_acc_model, './result/' + result_name + "_" + str(now) + '_best_acc.pt')
+            torch.save(best_acc_model,  save_dir + '/' + result_name + "_" + str(now) + '_best_acc.pt')
 
         if f_score > best_f1:
             best_f1 = f_score
             best_f1_model = deepcopy(model.state_dict())
+
             
-            with open('./result/' + result_name + "_" + str(now) + "_best_f1.txt", "w") as text_file:
+            with open( save_dir + '/' + result_name + "_" + str(now) + "_best_f1.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
 
-            torch.save(best_f1_model, './result/' + result_name + "_" + str(now) + '_best_f1.pt')
+            torch.save(best_f1_model,  save_dir + '/' + result_name + "_" + str(now) + '_best_f1.pt')
 
         #print('accuracy:', round(accuracy_score(labels, guesses), ndigits=3))
         #print('recall score:', round(recall_score(labels, guesses, average='micro'), ndigits=3))
@@ -412,9 +670,6 @@ if __name__ == "__main__":
     #parser.add_option("--weight", "-W", default="", dest="weight", type=str)
     parser.add_option("--data_CC", default="False", dest="data_CC", type=str)
     parser.add_option("--data_Seq", default="False", dest="data_Seq", type=str)
-
-    
-
-    
-
+    parser.add_option("--only_triage", default="False", dest="only_triage", type=str)
+    parser.add_option("--save_dir", default="./result", dest="save_dir", type=str)
     trainEffNet(parser)

@@ -48,6 +48,7 @@ class CNNBlock(nn.Module):
         self.se = SEBlock1d(out_channels, r)
         self.relu = nn.ReLU()
 
+
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
@@ -148,6 +149,7 @@ class TestModel2(nn.Module):
         
         
         return output
+
 
 if __name__=="__main__":
     print(print(torchsummary.summary(TestModel().cuda(), input_size=(1,26))))
