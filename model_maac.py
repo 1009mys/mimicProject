@@ -337,8 +337,8 @@ class MAAC_onlyTriage(nn.Module):
 
             
         self.numerical.append(LinearBLock(
-            in_channels=7,
-            out_channels=7,
+            in_channels=13,
+            out_channels=512,
             r=4))
 
 
@@ -349,14 +349,13 @@ class MAAC_onlyTriage(nn.Module):
         
 
         
-        self.total.append(LinearBLock(in_channels=825, out_channels=1024, r=4, bias=True))
+        self.total.append(LinearBLock(in_channels=1330, out_channels=4096, r=4, bias=True))
         #self.total.append(nn.Linear(in_features=2048, out_features=1))
         #self.total.append(nn.Sigmoid())
-        self.total.append(LinearBLock(in_channels=1024, out_channels=1, r=1, output=True, bias=True))
+        self.total.append(LinearBLock(in_channels=4096, out_channels=1, r=1, output=True, bias=True))
         #self.total.append(LinearBLock(in_channels=4096, out_channels=4096, r=4))
         #self.total.append(LinearBLock(in_channels=4096, out_channels=2, r=1))
 
-        self.output = nn.Threshold(0.5, 0)
 
         self.CC =        nn.ModuleList(self.CC)
         self.numerical = nn.ModuleList(self.numerical)
@@ -379,9 +378,10 @@ class MAAC_onlyTriage(nn.Module):
         x_sbp, 
         x_dbp, 
         x_gender,
-        x_acuity):
+        x_acuity,
+        x_sequential):
 
-        x_numerical = torch.cat((x_gender, x_acuity), dim=2)
+        x_numerical = torch.cat((x_gender, x_acuity, x_sequential), dim=2)
 
         
         for i in range(len(self.CC)):
@@ -639,10 +639,10 @@ class MAAC(nn.Module):
 
 
         self.numerical.append(LinearBLock(
-            in_channels=140, 
+            in_channels=142, 
             out_channels=512, 
             r=4))
-
+        """
         self.numerical.append(CNNBlock(
             in_channels = 1,
             out_channels = 4,
@@ -659,14 +659,14 @@ class MAAC(nn.Module):
             padding = 1,
             groups = 1,
             r = 4))
-
+        """
         
         
 
         
 
         
-        self.total.append(LinearBLock(in_channels=5034, out_channels=4096, r=4, bias=True))
+        self.total.append(LinearBLock(in_channels=1450, out_channels=4096, r=4, bias=True))
         #self.total.append(nn.Linear(in_features=2048, out_features=1))
         #self.total.append(nn.Sigmoid())
         self.total.append(LinearBLock(in_channels=4096, out_channels=1, r=1, output=True, bias=True))

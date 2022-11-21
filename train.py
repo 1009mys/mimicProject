@@ -285,7 +285,9 @@ def trainEffNet(parser):
                 x_sbp, 
                 x_dbp, 
                 x_gender,
-                x_acuity, y) in enumerate(train_loader):
+                x_acuity, 
+                x_sequential,
+                y) in enumerate(train_loader):
 
                 x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
                 x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
@@ -297,6 +299,7 @@ def trainEffNet(parser):
                 x_dbp = x_dbp.to(device).float()
                 x_gender = x_gender.to(device).float()
                 x_acuity = x_acuity.to(device).float()
+                x_sequential = x_sequential.to(device).float()
 
 
                 y = y.to(device).float()
@@ -310,7 +313,8 @@ def trainEffNet(parser):
                     x_sbp, 
                     x_dbp, 
                     x_gender,
-                    x_acuity)
+                    x_acuity,
+                    x_sequential)
 
                 output = output.view(output.size(0))
 
@@ -440,7 +444,9 @@ def trainEffNet(parser):
                     x_sbp, 
                     x_dbp, 
                     x_gender,
-                    x_acuity, label) in enumerate(test_loader):
+                    x_acuity, 
+                    x_sequential,
+                    label) in enumerate(test_loader):
 
                     x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
                     x_CC_token_attention_mask = x_CC_token_attention_mask.to(device).long()
@@ -452,6 +458,7 @@ def trainEffNet(parser):
                     x_dbp = x_dbp.to(device).float()
                     x_gender = x_gender.to(device).float()
                     x_acuity = x_acuity.to(device).float()
+                    x_sequential = x_sequential.to(device).float()
 
                     target = label.to(device).float()
                     
@@ -467,7 +474,8 @@ def trainEffNet(parser):
                         x_sbp, 
                         x_dbp, 
                         x_gender,
-                        x_acuity)
+                        x_acuity,
+                        x_sequential)
 
                     output = output.view(output.size(0))
                     lossT = loss_func(output, target)

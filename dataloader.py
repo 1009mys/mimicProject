@@ -64,6 +64,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
 
         x_gender = self.mimic_labels.iloc[idx, 54:56]
         x_acuity = self.mimic_labels.iloc[idx, 61:66]
+        x_sequential = self.mimic_labels.iloc[idx, 247:253]
 
 
         
@@ -76,6 +77,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
         x_dbp = np.array(list(x_dbp))
         x_gender = np.array(list(x_gender))
         x_acuity = np.array(list(x_acuity))
+        x_sequential = np.array(list(x_sequential))
         
         y = np.array(y)
 
@@ -94,6 +96,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
         x_dbp.astype(np.float32)
         x_gender.astype(np.float32)
         x_acuity.astype(np.float32)
+        x_sequential.astype(np.float32)
 
 
         
@@ -109,6 +112,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
         x_heartrate = torch.from_numpy(x_heartrate)
         x_gender = torch.from_numpy(x_gender)
         x_acuity = torch.from_numpy(x_acuity)
+        x_sequential = torch.from_numpy(x_sequential)
         
 
 
@@ -121,6 +125,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
         x_dbp = torch.unsqueeze(x_dbp,0)
         x_gender = torch.unsqueeze(x_gender, 0)
         x_acuity = torch.unsqueeze(x_acuity, 0)
+        x_sequential = torch.unsqueeze(x_sequential, 0)
         
         
 
@@ -133,7 +138,9 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
             x_sbp, 
             x_dbp, 
             x_gender,
-            x_acuity, y)
+            x_acuity,
+            x_sequential,
+             y)
 
 class MimicLoader_dataset1(Dataset):
     def __init__(self,
