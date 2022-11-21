@@ -408,15 +408,16 @@ class MACCwithTransformer(nn.Module):
         self.Bicarbonate_embedding      = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Creatinine_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Glucose_embedding          = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Hematocrit_embedding       = nn.Embedding(num_embeddings=8,  embedding_dim=1, padding_idx=0)
+        self.Hematocrit_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Hemoglobin_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Platelets_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Potassium_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Sodium_embedding           = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Urea_Nitrogen_embedding    = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.white_blood_cell_embedding = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.pO2_embedding              = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.pCO2_embedding             = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.pH_embedding               = nn.Embedding(num_embeddings=12, embedding_dim=1, padding_idx=0)
+        self.pH_embedding               = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
         self.Bilirubin_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
 
 
@@ -437,16 +438,17 @@ class MACCwithTransformer(nn.Module):
         self.Sodium_encoder             = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
         self.Urea_Nitrogen_encoder      = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
         self.white_blood_cell_encoder   = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.pO2_encoder                = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
         self.pCO2_encoder               = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.pH_encoder                 = PositionalEncoding(d_model=12, dropout=0.1, max_len=1024)
+        self.pH_encoder                 = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
         self.Bilirubin_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
 
 
         
 
-        self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=2882, nhead=11), num_layers=2)
+        self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=1176, nhead=3), num_layers=2)
 
-        self.fc = LinearBLock(2882, 1, 1, output=True)
+        self.fc = LinearBLock(1944, 1, 1, output=True)
 
     def forward(self, 
         x_CC_token_input_ids, 
@@ -462,11 +464,13 @@ class MACCwithTransformer(nn.Module):
         Creatinine, 
         Glucose, 
         Hematocrit, 
+        Hemoglobin,
         Platelet, 
         Potassium, 
         Sodium, 
         Urea_Nitrogen, 
         white_blood_cell, 
+        pO2,
         pCO2, 
         pH, 
         Bilirubin, 
@@ -475,6 +479,29 @@ class MACCwithTransformer(nn.Module):
         x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
         x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
 
+
+        x_heartrate = self.x_heartrate_encoder(x_heartrate)
+        x_resparate = self.x_resparate_encoder(x_resparate)
+        x_o2sat     = self.x_o2sat_encoder(x_o2sat)
+        x_sbp       = self.x_sbp_encoder(x_sbp)
+        x_dbp       = self.x_dbp_encoder(x_dbp)
+
+        Bicarbonate     = self.Bicarbonate_encoder(Bicarbonate)
+        Creatinine      = self.Creatinine_encoder(Creatinine)
+        Glucose         = self.Glucose_encoder(Glucose)
+        Hematocrit      = self.Hematocrit_encoder(Hematocrit)
+        Hemoglobin      = self.Hemoglobin_encoder(Hemoglobin)
+        Platelet        = self.Platelets_encoder(Platelet)
+        Potassium       = self.Potassium_encoder(Potassium)
+        Sodium          = self.Sodium_encoder(Sodium)
+        Urea_Nitrogen   = self.Urea_Nitrogen_encoder(Urea_Nitrogen)
+        white_blood_cell= self.white_blood_cell_encoder(white_blood_cell)
+        pO2             = self.pO2_encoder(pO2)
+        pCO2            = self.pCO2_encoder(pCO2)
+        pH              = self.pH_encoder(pH)
+        Bilirubin       = self.Bilirubin_encoder(Bilirubin)
+        """
+        print("after encoder")
         print(x_CC.shape)
         print(x_heartrate.shape)
         print(x_resparate.shape)
@@ -495,29 +522,7 @@ class MACCwithTransformer(nn.Module):
         print(pH.shape)
         print(Bilirubin.shape)
         print(x_numerical2.shape)
-
-        x_heartrate = self.x_heartrate_encoder(x_heartrate)
-        x_resparate = self.x_resparate_encoder(x_resparate)
-        x_o2sat     = self.x_o2sat_encoder(x_o2sat)
-        x_sbp       = self.x_sbp_encoder(x_sbp)
-        x_dbp       = self.x_dbp_encoder(x_dbp)
-
-        x_numerical1    = self.x_numerical1_encoder(x_numerical1)
-        Bicarbonate     = self.Bicarbonate_encoder(Bicarbonate)
-        Creatinine      = self.Creatinine_encoder(Creatinine)
-        Glucose         = self.Glucose_encoder(Glucose)
-        Hematocrit      = self.Hematocrit_encoder(Hematocrit)
-        Platelet        = self.Platelets_encoder(Platelet)
-        Potassium       = self.Potassium_encoder(Potassium)
-        Sodium          = self.Sodium_encoder(Sodium)
-        Urea_Nitrogen   = self.Urea_Nitrogen_encoder(Urea_Nitrogen)
-        white_blood_cell= self.white_blood_cell_encoder(white_blood_cell)
-        pCO2            = self.pCO2_encoder(pCO2)
-        pH              = self.pH_encoder(pH)
-        Bilirubin       = self.Bilirubin_encoder(Bilirubin)
-        x_numerical2    = self.x_numerical2_encoder(x_numerical2)
-
-
+        """
 
 
         x_total = torch.cat((
@@ -532,11 +537,13 @@ class MACCwithTransformer(nn.Module):
             Creatinine, 
             Glucose, 
             Hematocrit, 
+            Hemoglobin,
             Platelet, 
             Potassium, 
             Sodium, 
             Urea_Nitrogen, 
             white_blood_cell, 
+            pO2,
             pCO2, 
             pH, 
             Bilirubin, 
@@ -544,7 +551,9 @@ class MACCwithTransformer(nn.Module):
 
         x_total = self.total_encoder(x_total)
 
-        x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
+        #print(x_total.shape)
+
+        #x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
         output = self.fc(torch.cat((x_CC, x_total), dim=2))
 
         """
@@ -643,7 +652,7 @@ class MAAC_onlyTriage(nn.Module):
 
             
         self.numerical.append(LinearBLock(
-            in_channels=14,
+            in_channels=16,
             out_channels=512,
             r=4))
 
