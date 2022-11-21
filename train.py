@@ -26,7 +26,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from copy import deepcopy
 
 import datetime
-from pytorchtools import EarlyStopping
+from EarlyStopping import EarlyStopping
 import torchsummary
 
 import wandb
