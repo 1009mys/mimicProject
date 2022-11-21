@@ -208,26 +208,6 @@ class MACCwithTransformer_onlyTriage(nn.Module):
         super().__init__()
 
         self.CC_encoder = CC_encoderModel
-        
-        """
-        self.numerical_embedding = nn.Embedding(num_embeddings=233, embedding_dim=8, padding_idx=0)
-        self.numerical_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=233*8, nhead=2), num_layers=2)
-
-        self.Sequential_x_dbp_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
-        self.Sequential_x_dbp_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
-
-        self.Sequential_x_sbp_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
-        self.Sequential_x_sbp_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
-        
-        self.Sequential_x_o2sat_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
-        self.Sequential_x_o2sat_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
-
-        self.Sequential_x_resparate_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
-        self.Sequential_x_resparate_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
-
-        self.Sequential_x_heartrate_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
-        self.Sequential_x_heartrate_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
-        """
 
         self.x_heartrate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
         self.x_resparate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
@@ -235,19 +215,6 @@ class MACCwithTransformer_onlyTriage(nn.Module):
         self.x_sbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
         self.x_dbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
 
-        self.Bicarbonate_embedding      = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Creatinine_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Glucose_embedding          = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Hematocrit_embedding       = nn.Embedding(num_embeddings=8,  embedding_dim=1, padding_idx=0)
-        self.Hemoglobin_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Platelets_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Potassium_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Sodium_embedding           = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.Urea_Nitrogen_embedding    = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.white_blood_cell_embedding = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.pCO2_embedding             = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
-        self.pH_embedding               = nn.Embedding(num_embeddings=12, embedding_dim=1, padding_idx=0)
-        self.Bilirubin_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
 
         self.x_heartrate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
         self.x_resparate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
@@ -255,26 +222,13 @@ class MACCwithTransformer_onlyTriage(nn.Module):
         self.x_sbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
         self.x_dbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
 
-        self.Bicarbonate_encoder        = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Creatinine_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Glucose_encoder            = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Hematocrit_encoder         = PositionalEncoding(d_model=8,  dropout=0.1, max_len=1024)
-        self.Hemoglobin_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Platelets_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Potassium_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Sodium_encoder             = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.Urea_Nitrogen_encoder      = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.white_blood_cell_encoder   = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.pCO2_encoder               = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
-        self.pH_encoder                 = PositionalEncoding(d_model=12, dropout=0.1, max_len=1024)
-        self.Bilirubin_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
 
 
         
 
-        self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=2882, nhead=11), num_layers=2)
+        self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=834, nhead=3), num_layers=2)
 
-        self.fc = LinearBLock(2882, 1, 1, output=True)
+        self.fc = LinearBLock(1602, 1, 1, output=True)
 
     def forward(self, 
         x_CC_token_input_ids, 
@@ -285,23 +239,23 @@ class MACCwithTransformer_onlyTriage(nn.Module):
         x_o2sat, 
         x_sbp, 
         x_dbp, 
-        x_numerical1, 
-        Bicarbonate, 
-        Creatinine, 
-        Glucose, 
-        Hematocrit, 
-        Platelet, 
-        Potassium, 
-        Sodium, 
-        Urea_Nitrogen, 
-        white_blood_cell, 
-        pCO2, 
-        pH, 
-        Bilirubin, 
-        x_numerical2):
+        x_gender,
+        x_acuity,
+        x_sequential):
 
         x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
         x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
+        """
+        print(x_CC.shape)
+        print(x_heartrate.shape)
+        print(x_resparate.shape)
+        print(x_o2sat.shape)
+        print(x_sbp.shape)
+        print(x_dbp.shape)
+        print(x_gender.shape)
+        print(x_acuity.shape)
+        print(x_sequential.shape)
+        """
 
         x_total = torch.cat((
             x_CC,
@@ -310,24 +264,13 @@ class MACCwithTransformer_onlyTriage(nn.Module):
             x_o2sat, 
             x_sbp, 
             x_dbp, 
-            x_numerical1, 
-            Bicarbonate, 
-            Creatinine, 
-            Glucose, 
-            Hematocrit, 
-            Platelet, 
-            Potassium, 
-            Sodium, 
-            Urea_Nitrogen, 
-            white_blood_cell, 
-            pCO2, 
-            pH, 
-            Bilirubin, 
-            x_numerical2))
+            x_gender,
+            x_acuity,
+            x_sequential), dim=2)
 
         x_total = self.total_encoder(x_total)
 
-        x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
+        #x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
         output = self.fc(torch.cat((x_CC, x_total), dim=2))
 
         """
