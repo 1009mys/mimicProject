@@ -29,7 +29,6 @@ import datetime
 from EarlyStopping import EarlyStopping
 import torchsummary
 
-import wandb
 
 import matplotlib.pyplot as plt
 
@@ -65,7 +64,6 @@ def trainEffNet(parser):
     else:
         data_Seq = False
 
-    wandb.init()
 
     #pre_trained = options.pre_trained
 
