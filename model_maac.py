@@ -203,13 +203,13 @@ class PositionalEncoding(nn.Module):
         x = torch.cat([x, ff], dim=2)
         return self.dropout(x)
 
-
-
-class MACCwithTransformer(nn.Module):
+class MACCwithTransformer_onlyTriage(nn.Module):
     def __init__(self, CC_encoderModel=None):
         super().__init__()
-        self.CC_encoder = CC_encoderModel
 
+        self.CC_encoder = CC_encoderModel
+        
+        """
         self.numerical_embedding = nn.Embedding(num_embeddings=233, embedding_dim=8, padding_idx=0)
         self.numerical_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=233*8, nhead=2), num_layers=2)
 
@@ -227,7 +227,50 @@ class MACCwithTransformer(nn.Module):
 
         self.Sequential_x_heartrate_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
         self.Sequential_x_heartrate_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+        """
 
+        self.x_heartrate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_resparate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_o2sat_embedding          = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_sbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_dbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+
+        self.Bicarbonate_embedding      = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Creatinine_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Glucose_embedding          = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Hematocrit_embedding       = nn.Embedding(num_embeddings=8,  embedding_dim=1, padding_idx=0)
+        self.Hemoglobin_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Platelets_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Potassium_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Sodium_embedding           = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Urea_Nitrogen_embedding    = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.white_blood_cell_embedding = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.pCO2_embedding             = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.pH_embedding               = nn.Embedding(num_embeddings=12, embedding_dim=1, padding_idx=0)
+        self.Bilirubin_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+
+        self.x_heartrate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_resparate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_o2sat_encoder            = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_sbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_dbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+
+        self.Bicarbonate_encoder        = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Creatinine_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Glucose_encoder            = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Hematocrit_encoder         = PositionalEncoding(d_model=8,  dropout=0.1, max_len=1024)
+        self.Hemoglobin_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Platelets_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Potassium_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Sodium_encoder             = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Urea_Nitrogen_encoder      = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.white_blood_cell_encoder   = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.pCO2_encoder               = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.pH_encoder                 = PositionalEncoding(d_model=12, dropout=0.1, max_len=1024)
+        self.Bilirubin_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+
+
+        
 
         self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=2882, nhead=11), num_layers=2)
 
@@ -237,27 +280,73 @@ class MACCwithTransformer(nn.Module):
         x_CC_token_input_ids, 
         x_CC_token_attention_mask, 
         x_CC_token_token_type_ids, 
-        x_dbp, 
-        x_sbp, 
-        x_o2sat, 
-        x_resparate, 
         x_heartrate, 
-        x_numerical):
+        x_resparate, 
+        x_o2sat, 
+        x_sbp, 
+        x_dbp, 
+        x_numerical1, 
+        Bicarbonate, 
+        Creatinine, 
+        Glucose, 
+        Hematocrit, 
+        Platelet, 
+        Potassium, 
+        Sodium, 
+        Urea_Nitrogen, 
+        white_blood_cell, 
+        pCO2, 
+        pH, 
+        Bilirubin, 
+        x_numerical2):
 
+        x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
+        x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
+
+        x_total = torch.cat((
+            x_CC,
+            x_heartrate, 
+            x_resparate, 
+            x_o2sat, 
+            x_sbp, 
+            x_dbp, 
+            x_numerical1, 
+            Bicarbonate, 
+            Creatinine, 
+            Glucose, 
+            Hematocrit, 
+            Platelet, 
+            Potassium, 
+            Sodium, 
+            Urea_Nitrogen, 
+            white_blood_cell, 
+            pCO2, 
+            pH, 
+            Bilirubin, 
+            x_numerical2))
+
+        x_total = self.total_encoder(x_total)
+
+        x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
+        output = self.fc(torch.cat((x_CC, x_total), dim=2))
+
+        """
         x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
         x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
         x_numerical = x_numerical.to(torch.int64)
         x_numerical = self.numerical_embedding(x_numerical)
         x_numerical = x_numerical.view(x_numerical.shape[0], 1, x_numerical.shape[2]*x_numerical.shape[3])
         x_numerical = self.numerical_encoder(x_numerical)
-        # 
-        # x_dbp = x_dbp.unsqueeze(1)
-        # x_sbp = x_sbp.unsqueeze(1)
-        # x_o2sat = x_o2sat.unsqueeze(1)
-        # x_resparate = x_resparate.unsqueeze(1)
-        # x_heartrate = x_heartrate.unsqueeze(1)
+         
+        x_dbp = x_dbp.unsqueeze(1)
+        x_sbp = x_sbp.unsqueeze(1)
+        x_o2sat = x_o2sat.unsqueeze(1)
+        x_resparate = x_resparate.unsqueeze(1)
+        x_heartrate = x_heartrate.unsqueeze(1)
 
-        #x_sequential = torch.cat([x_dbp, x_sbp, x_o2sat, x_resparate, x_heartrate], dim=1)
+        x_sequential = torch.cat([x_dbp, x_sbp, x_o2sat, x_resparate, x_heartrate], dim=1)
+
+
         x_dbp = self.Sequential_x_dbp_pe(x_dbp)
         x_dbp = self.Sequential_x_dbp_encoder(x_dbp)
 
@@ -281,7 +370,224 @@ class MACCwithTransformer(nn.Module):
         x_total = self.total_encoder(x_total)
         x_total = x_total.view(x_total.size(0), x_total.size(2))
         output = self.fc(x_total)
+        """
+        return output
 
+class MACCwithTransformer(nn.Module):
+    def __init__(self, CC_encoderModel=None):
+        super().__init__()
+
+        self.CC_encoder = CC_encoderModel
+        
+        """
+        self.numerical_embedding = nn.Embedding(num_embeddings=233, embedding_dim=8, padding_idx=0)
+        self.numerical_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=233*8, nhead=2), num_layers=2)
+
+        self.Sequential_x_dbp_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
+        self.Sequential_x_dbp_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+
+        self.Sequential_x_sbp_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
+        self.Sequential_x_sbp_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+        
+        self.Sequential_x_o2sat_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
+        self.Sequential_x_o2sat_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+
+        self.Sequential_x_resparate_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
+        self.Sequential_x_resparate_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+
+        self.Sequential_x_heartrate_pe = PositionalEncoding(d_model=40, dropout=0.1, max_len=1024)
+        self.Sequential_x_heartrate_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=50, nhead=5), num_layers=2)
+        """
+
+        self.x_heartrate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_resparate_embedding      = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_o2sat_embedding          = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_sbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+        self.x_dbp_embedding            = nn.Embedding(num_embeddings=10, embedding_dim=1, padding_idx=0)
+
+        self.Bicarbonate_embedding      = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Creatinine_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Glucose_embedding          = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Hematocrit_embedding       = nn.Embedding(num_embeddings=8,  embedding_dim=1, padding_idx=0)
+        self.Hemoglobin_embedding       = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Platelets_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Potassium_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Sodium_embedding           = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.Urea_Nitrogen_embedding    = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.white_blood_cell_embedding = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.pCO2_embedding             = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+        self.pH_embedding               = nn.Embedding(num_embeddings=12, embedding_dim=1, padding_idx=0)
+        self.Bilirubin_embedding        = nn.Embedding(num_embeddings=6,  embedding_dim=1, padding_idx=0)
+
+
+
+        self.x_heartrate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_resparate_encoder        = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_o2sat_encoder            = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_sbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+        self.x_dbp_encoder              = PositionalEncoding(d_model=10, dropout=0.1, max_len=1024)
+
+        self.Bicarbonate_encoder        = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Creatinine_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Glucose_encoder            = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Hematocrit_encoder         = PositionalEncoding(d_model=8,  dropout=0.1, max_len=1024)
+        self.Hemoglobin_encoder         = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Platelets_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Potassium_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Sodium_encoder             = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.Urea_Nitrogen_encoder      = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.white_blood_cell_encoder   = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.pCO2_encoder               = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+        self.pH_encoder                 = PositionalEncoding(d_model=12, dropout=0.1, max_len=1024)
+        self.Bilirubin_encoder          = PositionalEncoding(d_model=6,  dropout=0.1, max_len=1024)
+
+
+        
+
+        self.total_encoder = nn.TransformerEncoder(nn.TransformerEncoderLayer(d_model=2882, nhead=11), num_layers=2)
+
+        self.fc = LinearBLock(2882, 1, 1, output=True)
+
+    def forward(self, 
+        x_CC_token_input_ids, 
+        x_CC_token_attention_mask, 
+        x_CC_token_token_type_ids, 
+        x_heartrate, 
+        x_resparate, 
+        x_o2sat, 
+        x_sbp, 
+        x_dbp, 
+        x_numerical1, 
+        Bicarbonate, 
+        Creatinine, 
+        Glucose, 
+        Hematocrit, 
+        Platelet, 
+        Potassium, 
+        Sodium, 
+        Urea_Nitrogen, 
+        white_blood_cell, 
+        pCO2, 
+        pH, 
+        Bilirubin, 
+        x_numerical2):
+
+        x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
+        x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
+
+        print(x_CC.shape)
+        print(x_heartrate.shape)
+        print(x_resparate.shape)
+        print(x_o2sat.shape)
+        print(x_sbp.shape)
+        print(x_dbp.shape)
+        print(x_numerical1.shape)
+        print(Bicarbonate.shape)
+        print(Creatinine.shape)
+        print(Glucose.shape)
+        print(Hematocrit.shape)
+        print(Platelet.shape)
+        print(Potassium.shape)
+        print(Sodium.shape)
+        print(Urea_Nitrogen.shape)
+        print(white_blood_cell.shape)
+        print(pCO2.shape)
+        print(pH.shape)
+        print(Bilirubin.shape)
+        print(x_numerical2.shape)
+
+        x_heartrate = self.x_heartrate_encoder(x_heartrate)
+        x_resparate = self.x_resparate_encoder(x_resparate)
+        x_o2sat     = self.x_o2sat_encoder(x_o2sat)
+        x_sbp       = self.x_sbp_encoder(x_sbp)
+        x_dbp       = self.x_dbp_encoder(x_dbp)
+
+        x_numerical1    = self.x_numerical1_encoder(x_numerical1)
+        Bicarbonate     = self.Bicarbonate_encoder(Bicarbonate)
+        Creatinine      = self.Creatinine_encoder(Creatinine)
+        Glucose         = self.Glucose_encoder(Glucose)
+        Hematocrit      = self.Hematocrit_encoder(Hematocrit)
+        Platelet        = self.Platelets_encoder(Platelet)
+        Potassium       = self.Potassium_encoder(Potassium)
+        Sodium          = self.Sodium_encoder(Sodium)
+        Urea_Nitrogen   = self.Urea_Nitrogen_encoder(Urea_Nitrogen)
+        white_blood_cell= self.white_blood_cell_encoder(white_blood_cell)
+        pCO2            = self.pCO2_encoder(pCO2)
+        pH              = self.pH_encoder(pH)
+        Bilirubin       = self.Bilirubin_encoder(Bilirubin)
+        x_numerical2    = self.x_numerical2_encoder(x_numerical2)
+
+
+
+
+        x_total = torch.cat((
+            x_CC,
+            x_heartrate, 
+            x_resparate, 
+            x_o2sat, 
+            x_sbp, 
+            x_dbp, 
+            x_numerical1, 
+            Bicarbonate, 
+            Creatinine, 
+            Glucose, 
+            Hematocrit, 
+            Platelet, 
+            Potassium, 
+            Sodium, 
+            Urea_Nitrogen, 
+            white_blood_cell, 
+            pCO2, 
+            pH, 
+            Bilirubin, 
+            x_numerical2), dim=2)
+
+        x_total = self.total_encoder(x_total)
+
+        x_total = x_total.view(x_total.size(0), 1, x_total.size(1))
+        output = self.fc(torch.cat((x_CC, x_total), dim=2))
+
+        """
+        x_CC = self.CC_encoder(x_CC_token_input_ids, x_CC_token_attention_mask, x_CC_token_token_type_ids)
+        x_CC = x_CC.view(x_CC.size(0), 1, x_CC.size(1))
+        x_numerical = x_numerical.to(torch.int64)
+        x_numerical = self.numerical_embedding(x_numerical)
+        x_numerical = x_numerical.view(x_numerical.shape[0], 1, x_numerical.shape[2]*x_numerical.shape[3])
+        x_numerical = self.numerical_encoder(x_numerical)
+         
+        x_dbp = x_dbp.unsqueeze(1)
+        x_sbp = x_sbp.unsqueeze(1)
+        x_o2sat = x_o2sat.unsqueeze(1)
+        x_resparate = x_resparate.unsqueeze(1)
+        x_heartrate = x_heartrate.unsqueeze(1)
+
+        x_sequential = torch.cat([x_dbp, x_sbp, x_o2sat, x_resparate, x_heartrate], dim=1)
+
+
+        x_dbp = self.Sequential_x_dbp_pe(x_dbp)
+        x_dbp = self.Sequential_x_dbp_encoder(x_dbp)
+
+        x_sbp = self.Sequential_x_sbp_pe(x_sbp)
+        x_sbp = self.Sequential_x_sbp_encoder(x_sbp)
+
+        x_o2sat = self.Sequential_x_o2sat_pe(x_o2sat)
+        x_o2sat = self.Sequential_x_o2sat_encoder(x_o2sat)
+
+        x_resparate = self.Sequential_x_resparate_pe(x_resparate)
+        x_resparate = self.Sequential_x_resparate_encoder(x_resparate)
+
+        x_heartrate = self.Sequential_x_heartrate_pe(x_heartrate)
+        x_heartrate = self.Sequential_x_heartrate_encoder(x_heartrate)
+
+        x_total = torch.cat([x_CC, x_numerical, x_dbp, x_sbp, x_o2sat, x_resparate, x_heartrate], dim=2)
+
+
+
+        #x_total = torch.cat([x_CC, x_numerical, x_sequential], dim=1)
+        x_total = self.total_encoder(x_total)
+        x_total = x_total.view(x_total.size(0), x_total.size(2))
+        output = self.fc(x_total)
+        """
         return output
 
 class MAAC_onlyTriage(nn.Module):
@@ -337,7 +643,7 @@ class MAAC_onlyTriage(nn.Module):
 
             
         self.numerical.append(LinearBLock(
-            in_channels=13,
+            in_channels=14,
             out_channels=512,
             r=4))
 
@@ -514,6 +820,7 @@ class MAAC(nn.Module):
         self.Sodium = []
         self.UreaNitrogen = []
         self.white_blood_cell = []
+        self.pO2 = []
         self.pCO2 = []
         self.pH = []
         self.Bilirubin = []
@@ -577,7 +884,7 @@ class MAAC(nn.Module):
             dropout=0.2))
 
         self.Hematocrit.append(LSTMBlock(
-            channels = 8,
+            channels = 6,
             hidden_size=10,
             num_layers=4,
             dropout=0.2))
@@ -618,8 +925,14 @@ class MAAC(nn.Module):
             num_layers=4,
             dropout=0.2))
 
+        self.pO2.append(LSTMBlock(
+            channels = 6,
+            hidden_size=10,
+            num_layers=4,
+            dropout=0.2))
+
         self.pCO2.append(LSTMBlock(
-            channels = 12,
+            channels = 6,
             hidden_size=10,
             num_layers=4,
             dropout=0.2))
@@ -639,7 +952,7 @@ class MAAC(nn.Module):
 
 
         self.numerical.append(LinearBLock(
-            in_channels=142, 
+            in_channels=138, 
             out_channels=512, 
             r=4))
         """
@@ -666,7 +979,7 @@ class MAAC(nn.Module):
         
 
         
-        self.total.append(LinearBLock(in_channels=1450, out_channels=4096, r=4, bias=True))
+        self.total.append(LinearBLock(in_channels=1470, out_channels=4096, r=4, bias=True))
         #self.total.append(nn.Linear(in_features=2048, out_features=1))
         #self.total.append(nn.Sigmoid())
         self.total.append(LinearBLock(in_channels=4096, out_channels=1, r=1, output=True, bias=True))
@@ -692,6 +1005,7 @@ class MAAC(nn.Module):
         self.Sodium = nn.ModuleList(self.Sodium)
         self.UreaNitrogen = nn.ModuleList(self.UreaNitrogen)
         self.white_blood_cell = nn.ModuleList(self.white_blood_cell)
+        self.pO2 = nn.ModuleList(self.pO2)
         self.pCO2 = nn.ModuleList(self.pCO2)
         self.pH = nn.ModuleList(self.pH)
         self.Bilirubin = nn.ModuleList(self.Bilirubin)
@@ -712,11 +1026,13 @@ class MAAC(nn.Module):
         Creatinine, 
         Glucose, 
         Hematocrit, 
+        Hemoglobin,
         Platelet, 
         Potassium, 
         Sodium, 
         Urea_Nitrogen, 
         white_blood_cell, 
+        pO2,
         pCO2, 
         pH, 
         Bilirubin, 
@@ -755,6 +1071,9 @@ class MAAC(nn.Module):
 
         for i in range(len(self.Hematocrit)):
             Hematocrit = self.Hematocrit[i](Hematocrit)
+        
+        for i in range(len(self.Hemoglobin)):
+            Hemoglobin = self.Hemoglobin[i](Hemoglobin)
 
         for i in range(len(self.Platelets)):
             Platelet = self.Platelets[i](Platelet)
@@ -770,6 +1089,9 @@ class MAAC(nn.Module):
 
         for i in range(len(self.white_blood_cell)):
             white_blood_cell = self.white_blood_cell[i](white_blood_cell)
+        
+        for i in range(len(self.pO2)):
+            pO2 = self.pO2[i](pO2)
 
         for i in range(len(self.pCO2)):
             pCO2 = self.pCO2[i](pCO2)
@@ -828,11 +1150,13 @@ class MAAC(nn.Module):
         Creatinine = Creatinine.view(Creatinine.size(0), -1)
         Glucose = Glucose.view(Glucose.size(0), -1)
         Hematocrit = Hematocrit.view(Hematocrit.size(0), -1)
+        Hemoglobin = Hemoglobin.view(Hemoglobin.size(0), -1)
         Platelet = Platelet.view(Platelet.size(0), -1)
         Potassium = Potassium.view(Potassium.size(0), -1)
         Sodium = Sodium.view(Sodium.size(0), -1)
         Urea_Nitrogen = Urea_Nitrogen.view(Urea_Nitrogen.size(0), -1)
         white_blood_cell = white_blood_cell.view(white_blood_cell.size(0), -1)
+        pO2 = pO2.view(pO2.size(0), -1)
         pCO2 = pCO2.view(pCO2.size(0), -1)
         pH = pH.view(pH.size(0), -1)
         Bilirubin = Bilirubin.view(Bilirubin.size(0), -1)
@@ -851,18 +1175,20 @@ class MAAC(nn.Module):
         print(Creatinine.shape)
         print(Glucose.shape)
         print(Hematocrit.shape)
+        print(Hemoglobin.shape)
         print(Platelet.shape)
         print(Potassium.shape)
         print(Sodium.shape)
         print(Urea_Nitrogen.shape)
         print(white_blood_cell.shape)
+        print(pO2.shape)
         print(pCO2.shape)
         print(pH.shape)
         print(Bilirubin.shape)
         """
 
         
-        x_total = torch.cat((x_CC, x_sbp, x_dbp, x_o2sat, x_resparate, x_heartrate, x_numerical, Bicarbonate, Creatinine, Glucose, Hematocrit, Platelet, Potassium, Sodium, Urea_Nitrogen, white_blood_cell, pCO2, pH, Bilirubin), 1)
+        x_total = torch.cat((x_CC, x_sbp, x_dbp, x_o2sat, x_resparate, x_heartrate, x_numerical, Bicarbonate, Creatinine, Glucose, Hematocrit, Hemoglobin, Platelet, Potassium, Sodium, Urea_Nitrogen, white_blood_cell, pO2, pCO2, pH, Bilirubin), 1)
 
         
         for i in range(len(self.total)):

@@ -64,7 +64,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
 
         x_gender = self.mimic_labels.iloc[idx, 54:56]
         x_acuity = self.mimic_labels.iloc[idx, 61:66]
-        x_sequential = self.mimic_labels.iloc[idx, 247:253]
+        x_sequential = self.mimic_labels.iloc[idx, 246:255]
 
 
         
@@ -193,20 +193,22 @@ class MimicLoader_dataset1(Dataset):
         x_sbp = self.mimic_labels.iloc[idx, 33:43]
         x_dbp = self.mimic_labels.iloc[idx, 43:53]
         y = self.mimic_labels.iloc[idx, 53]
-        x_numerical1 = self.mimic_labels.iloc[idx, 54:163]
-        Bicarbonate = self.mimic_labels.iloc[idx, 163:169]
-        Creatinine = self.mimic_labels.iloc[idx, 169:175]
-        Glucose = self.mimic_labels.iloc[idx, 175:181]
-        Hematocrit = self.mimic_labels.iloc[idx, 181:189]
-        Platelet = self.mimic_labels.iloc[idx, 189:195]
-        Potassium = self.mimic_labels.iloc[idx, 195:201]
-        Sodium = self.mimic_labels.iloc[idx, 201:207]
-        Urea_Nitrogen = self.mimic_labels.iloc[idx, 207:213]
-        white_blood_cell = self.mimic_labels.iloc[idx, 213:219]
-        pCO2 = self.mimic_labels.iloc[idx, 219:231]
-        pH = self.mimic_labels.iloc[idx, 231:237]
-        Bilirubin = self.mimic_labels.iloc[idx, 237:243]
-        x_numerical2 = self.mimic_labels.iloc[idx, 243:]
+        x_numerical1 = self.mimic_labels.iloc[idx, 54:162]
+        Bicarbonate = self.mimic_labels.iloc[idx, 162:168]
+        Creatinine = self.mimic_labels.iloc[idx, 168:174]
+        Glucose = self.mimic_labels.iloc[idx, 174:180]
+        Hematocrit = self.mimic_labels.iloc[idx, 180:186]
+        Hemoglobin = self.mimic_labels.iloc[idx, 186:192]
+        Platelet = self.mimic_labels.iloc[idx, 192:198]
+        Potassium = self.mimic_labels.iloc[idx, 198:204]
+        Sodium = self.mimic_labels.iloc[idx, 204:210]
+        Urea_Nitrogen = self.mimic_labels.iloc[idx, 210:216]
+        white_blood_cell = self.mimic_labels.iloc[idx, 216:222]
+        pO2 = self.mimic_labels.iloc[idx, 222:228]
+        pCO2 = self.mimic_labels.iloc[idx, 228:234]
+        pH = self.mimic_labels.iloc[idx, 234:240]
+        Bilirubin = self.mimic_labels.iloc[idx, 240:246]
+        x_numerical2 = self.mimic_labels.iloc[idx, 246:]
 
         #x_CC = np.array(list(x_CC))
         x_heartrate = np.array(list(x_heartrate))
@@ -219,11 +221,13 @@ class MimicLoader_dataset1(Dataset):
         Creatinine = np.array(list(Creatinine))
         Glucose = np.array(list(Glucose))
         Hematocrit = np.array(list(Hematocrit))
+        Hemoglobin = np.array(list(Hemoglobin))
         Platelet = np.array(list(Platelet))
         Potassium = np.array(list(Potassium))
         Sodium = np.array(list(Sodium))
         Urea_Nitrogen = np.array(list(Urea_Nitrogen))
         white_blood_cell = np.array(list(white_blood_cell))
+        pO2 = np.array(list(pO2))
         pCO2 = np.array(list(pCO2))
         pH = np.array(list(pH))
         Bilirubin = np.array(list(Bilirubin))
@@ -249,11 +253,13 @@ class MimicLoader_dataset1(Dataset):
         Creatinine.astype(np.float32)
         Glucose.astype(np.float32)
         Hematocrit.astype(np.float32)
+        Hemoglobin.astype(np.float32)
         Platelet.astype(np.float32)
         Potassium.astype(np.float32)
         Sodium.astype(np.float32)
         Urea_Nitrogen.astype(np.float32)
         white_blood_cell.astype(np.float32)
+        pO2.astype(np.float32)
         pCO2.astype(np.float32)
         pH.astype(np.float32)
         Bilirubin.astype(np.float32)
@@ -273,12 +279,14 @@ class MimicLoader_dataset1(Dataset):
         Creatinine = torch.from_numpy(Creatinine)
         Glucose = torch.from_numpy(Glucose)
         Hematocrit = torch.from_numpy(Hematocrit)
+        Hemoglobin = torch.from_numpy(Hemoglobin)
         Platelet = torch.from_numpy(Platelet)
         Potassium = torch.from_numpy(Potassium)
         Sodium = torch.from_numpy(Sodium)
         Urea_Nitrogen = torch.from_numpy(Urea_Nitrogen)
         white_blood_cell = torch.from_numpy(white_blood_cell)
         pCO2 = torch.from_numpy(pCO2)
+        pO2 = torch.from_numpy(pO2)
         pH = torch.from_numpy(pH)
         Bilirubin = torch.from_numpy(Bilirubin)
         x_numerical2 = torch.from_numpy(x_numerical2)
@@ -296,11 +304,13 @@ class MimicLoader_dataset1(Dataset):
         Creatinine = torch.unsqueeze(Creatinine,0)
         Glucose = torch.unsqueeze(Glucose,0)
         Hematocrit = torch.unsqueeze(Hematocrit,0)
+        Hemoglobin = torch.unsqueeze(Hemoglobin,0)
         Platelet = torch.unsqueeze(Platelet,0)
         Potassium = torch.unsqueeze(Potassium,0)
         Sodium = torch.unsqueeze(Sodium,0)
         Urea_Nitrogen = torch.unsqueeze(Urea_Nitrogen,0)
         white_blood_cell = torch.unsqueeze(white_blood_cell,0)
+        pO2 = torch.unsqueeze(pO2,0)
         pCO2 = torch.unsqueeze(pCO2,0)
         pH = torch.unsqueeze(pH,0)
         Bilirubin = torch.unsqueeze(Bilirubin,0)
@@ -319,11 +329,13 @@ class MimicLoader_dataset1(Dataset):
             Creatinine, 
             Glucose, 
             Hematocrit, 
+            Hemoglobin,
             Platelet, 
             Potassium, 
             Sodium, 
             Urea_Nitrogen, 
             white_blood_cell, 
+            pO2,
             pCO2, 
             pH, 
             Bilirubin, 

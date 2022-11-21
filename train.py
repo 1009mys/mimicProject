@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader # train,test 데이터를 loader객체�
 
 from dataloader import MimicLoader, MimicLoader_dataset1, MimicLoader_dataset1_onlyTriage
 from model import TestModel, TestModel2
-from model_maac import MAAC, encoder, MACCwithTransformer, MAAC_onlyTriage
+from model_maac import MAAC, encoder, MACCwithTransformer, MAAC_onlyTriage, MACCwithTransformer_onlyTriage
 
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, classification_report
 from sklearn.metrics import roc_curve, roc_auc_score
@@ -144,8 +144,12 @@ def trainEffNet(parser):
             model = MAAC_onlyTriage(encoderModel)
 
     elif modelNum == 'maccwithTransformer':
-        encoderModel = encoder(encoder_pretrained=True)
-        model = MACCwithTransformer(encoderModel)
+        if only_triage == False:
+            encoderModel = encoder(encoder_pretrained=True)
+            model = MACCwithTransformer(encoderModel)
+        else:
+            encoderModel = encoder(encoder_pretrained=True)
+            model = MACCwithTransformer_onlyTriage(encoderModel)
         
 
     #print(model)
@@ -205,11 +209,13 @@ def trainEffNet(parser):
                 Creatinine, 
                 Glucose, 
                 Hematocrit, 
+                Hemoglobin,
                 Platelet, 
                 Potassium, 
                 Sodium, 
                 Urea_Nitrogen, 
                 white_blood_cell, 
+                pO2,
                 pCO2, 
                 pH, 
                 Bilirubin, 
@@ -229,11 +235,13 @@ def trainEffNet(parser):
                 Creatinine = Creatinine.to(device).float()
                 Glucose = Glucose.to(device).float()
                 Hematocrit = Hematocrit.to(device).float()
+                Hemoglobin = Hemoglobin.to(device).float()
                 Platelet = Platelet.to(device).float()
                 Potassium = Potassium.to(device).float()
                 Sodium = Sodium.to(device).float()
                 Urea_Nitrogen = Urea_Nitrogen.to(device).float()
                 white_blood_cell = white_blood_cell.to(device).float()
+                pO2 = pO2.to(device).float()
                 pCO2 = pCO2.to(device).float()
                 pH = pH.to(device).float()
                 Bilirubin = Bilirubin.to(device).float()
@@ -255,11 +263,13 @@ def trainEffNet(parser):
                     Creatinine, 
                     Glucose, 
                     Hematocrit, 
+                    Hemoglobin,
                     Platelet, 
                     Potassium, 
                     Sodium, 
                     Urea_Nitrogen, 
                     white_blood_cell, 
+                    pO2,
                     pCO2, 
                     pH, 
                     Bilirubin, 
@@ -353,15 +363,17 @@ def trainEffNet(parser):
                     Creatinine, 
                     Glucose, 
                     Hematocrit, 
+                    Hemoglobin,
                     Platelet, 
                     Potassium, 
                     Sodium, 
                     Urea_Nitrogen, 
                     white_blood_cell, 
+                    pO2,
                     pCO2, 
                     pH, 
                     Bilirubin, 
-                    x_numerical2, 
+                    x_numerical2,
                     label) in enumerate(test_loader):
 
                     x_CC_token_input_ids = x_CC_token_input_ids.to(device).long()
@@ -377,11 +389,13 @@ def trainEffNet(parser):
                     Creatinine = Creatinine.to(device).float()
                     Glucose = Glucose.to(device).float()
                     Hematocrit = Hematocrit.to(device).float()
+                    Hemoglobin = Hemoglobin.to(device).float()
                     Platelet = Platelet.to(device).float()
                     Potassium = Potassium.to(device).float()
                     Sodium = Sodium.to(device).float()
                     Urea_Nitrogen = Urea_Nitrogen.to(device).float()
                     white_blood_cell = white_blood_cell.to(device).float()
+                    pO2 = pO2.to(device).float()
                     pCO2 = pCO2.to(device).float()
                     pH = pH.to(device).float()
                     Bilirubin = Bilirubin.to(device).float()
@@ -405,11 +419,13 @@ def trainEffNet(parser):
                         Creatinine, 
                         Glucose, 
                         Hematocrit, 
+                        Hemoglobin,
                         Platelet, 
                         Potassium, 
                         Sodium, 
                         Urea_Nitrogen, 
                         white_blood_cell, 
+                        pO2,
                         pCO2, 
                         pH, 
                         Bilirubin, 
@@ -557,9 +573,26 @@ def trainEffNet(parser):
             best_acc = acc
             best_acc_model = deepcopy(model.state_dict())
 
+            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses))
+    
+            # 대각선
+            plt.plot([0,1],[0,1],label='STR')
 
-            with open( save_dir + '/' + result_name + "_" + str(now) + "_best_acc.txt", "w") as text_file:
+            # ROC
+            plt.plot(fprs,tprs,label='ROC')
+
+
+            plt.xlabel('FPR')
+            plt.ylabel('TPR')
+            plt.legend()
+            plt.grid()
+            plt.savefig(save_dir + '/' + result_name + "_" + str(now) + "_best_acc.png")
+            plt.cla()
+
+
+            with open(save_dir + '/' + result_name + "_" + str(now) + "_best_acc.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
+                print('roc auc value {}'.format(roc_auc_score(np.array(labels),np.array(guesses))), file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
@@ -571,9 +604,26 @@ def trainEffNet(parser):
             best_f1 = f_score
             best_f1_model = deepcopy(model.state_dict())
 
+            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses))
+    
+            # 대각선
+            plt.plot([0,1],[0,1],label='STR')
+
+            # ROC
+            plt.plot(fprs,tprs,label='ROC')
+
+
+            plt.xlabel('FPR')
+            plt.ylabel('TPR')
+            plt.legend()
+            plt.grid()
+            plt.savefig(save_dir + '/' + result_name + "_" + str(now) + "_best_f1.png")
+            plt.cla()
+
             
             with open( save_dir + '/' + result_name + "_" + str(now) + "_best_f1.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
+                print('roc auc value {}'.format(roc_auc_score(np.array(labels),np.array(guesses))), file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
