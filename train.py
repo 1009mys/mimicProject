@@ -532,6 +532,7 @@ def trainEffNet(parser):
 
         print(classification_report(labels, guesses, labels=[0,1]))
 
+        """
         with open(save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + ".txt", "w") as text_file:
             print("epoch:", epoch, file=text_file)
             print("test loss:", test_loss, file=text_file)
@@ -540,6 +541,7 @@ def trainEffNet(parser):
             print("average", total, file=text_file)
         
         torch.save(best_acc_model, save_dir + '/' + result_name + "_" + str(now) + "_epoch" + str(epoch) + '.pt')
+        """
 
         #misc (acc 계산, etc) 
 
