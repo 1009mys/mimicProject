@@ -90,7 +90,8 @@ class LinearBLock(nn.Module):
 
         
         if output == True:
-            self.relu.append(nn.Sigmoid())
+            self.relu.append(nn.Softmax(dim=1))
+            #self.relu.append(nn.Sigmoid())
         else:
             self.relu.append(nn.ReLU())
         
@@ -101,7 +102,8 @@ class LinearBLock(nn.Module):
             #self.relu.append(nn.ReLU())
             
             if i == r-2 and output == True:
-                self.relu.append(nn.Sigmoid())
+                self.relu.append(nn.Softmax(dim=1))
+                #self.relu.append(nn.Sigmoid())
             else:
                 self.relu.append(nn.ReLU())
             

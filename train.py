@@ -539,6 +539,7 @@ def trainEffNet(parser):
         ff = [int(l) for l in labels]
 
         #print(guesses)
+        guesses_ = deepcopy(guesses)
         guesses = [0 if guesses[i] <= 0.5 else 1 for i in range(len(guesses))]
         labels =  [0 if labels[i] <= 0.5 else 1 for i in range(len(labels))]
         #print(total)
@@ -573,7 +574,7 @@ def trainEffNet(parser):
             best_acc = acc
             best_acc_model = deepcopy(model.state_dict())
 
-            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses))
+            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses_))
     
             # 대각선
             plt.plot([0,1],[0,1],label='STR')
@@ -592,7 +593,7 @@ def trainEffNet(parser):
 
             with open(save_dir + '/' + result_name + "_" + str(now) + "_best_acc.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
-                print('roc auc value {}'.format(roc_auc_score(np.array(labels),np.array(guesses))), file=text_file)
+                print('roc auc value {}'.format(roc_auc_score(y_true=np.array(labels), y_score=np.array(guesses_))), file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
@@ -604,7 +605,7 @@ def trainEffNet(parser):
             best_f1 = f_score
             best_f1_model = deepcopy(model.state_dict())
 
-            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses))
+            fprs, tprs, thresholds = roc_curve(np.array(labels), np.array(guesses_))
     
             # 대각선
             plt.plot([0,1],[0,1],label='STR')
@@ -623,7 +624,7 @@ def trainEffNet(parser):
             
             with open( save_dir + '/' + result_name + "_" + str(now) + "_best_f1.txt", "w") as text_file:
                 print("epoch:", epoch, file=text_file)
-                print('roc auc value {}'.format(roc_auc_score(np.array(labels),np.array(guesses))), file=text_file)
+                print('roc auc value {}'.format(roc_auc_score(np.array(labels),np.array(guesses_))), file=text_file)
                 print("test loss:", test_loss, file=text_file)
                 print(classification_report(labels, guesses, digits=3), file=text_file)
                 print(model, file=text_file)
