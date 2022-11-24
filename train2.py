@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader # train,test 데이터를 loader객체�
 
 from model import TestModel, TestModel2
 from model_maac import MAAC, encoder, MACCwithTransformer, MAAC_onlyTriage, MACCwithTransformer_onlyTriage
-
+from dataloader import MimicLoader, MimicLoader_dataset1, MimicLoader_dataset1_onlyTriage
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, classification_report
 from sklearn.metrics import roc_curve, roc_auc_score
 
@@ -33,7 +33,8 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 
-class MimicLoader_dataset1_onlyTriage(Dataset):
+
+class MimicLoader_dataset1_onlyTriage_t(Dataset):
     def __init__(self,
         data_CC = False,
         data_Seq = False,
@@ -164,7 +165,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
             x_sequential,
              y)
 
-class MimicLoader_dataset1(Dataset):
+class MimicLoader_dataset1_t(Dataset):
     def __init__(self,
         data_CC = False,
         data_Seq = False,
@@ -397,11 +398,9 @@ def trainEffNet(parser):
     train_data_x = options.train_data_x
     train_data_y = options.train_data_y
 
-    test_a_x = options.test_a_x
-    test_b_x = options.test_b_x
+    test_a = options.test_a
+    test_b = options.test_b
 
-    test_a_y = options.test_a_y
-    test_b_y = options.test_b_y
 
     if options.only_triage == 'True':
         only_triage = True
@@ -439,7 +438,7 @@ def trainEffNet(parser):
     ])
 
     if only_triage == False:
-        mimicTrain = MimicLoader_dataset1(
+        mimicTrain = MimicLoader_dataset1_t(
             data_CC=data_CC, 
             data_Seq=data_Seq, 
             annotations_file_x=train_data_x, 
@@ -450,18 +449,16 @@ def trainEffNet(parser):
         mimicTest_a = MimicLoader_dataset1(
             data_CC=data_CC, 
             data_Seq=data_Seq,
-            annotations_file_x=test_a_x, 
-            annotations_file_y=test_a_y,
+            annotations_file=test_a, 
             train=False)
         
         mimicTest_b = MimicLoader_dataset1(
             data_CC=data_CC, 
             data_Seq=data_Seq,
-            annotations_file_x=test_b_x, 
-            annotations_file_y=test_b_y,
+            annotations_file=test_b, 
             train=False)
     else:
-        mimicTrain = MimicLoader_dataset1_onlyTriage(
+        mimicTrain = MimicLoader_dataset1_onlyTriage_t(
             data_CC=data_CC, 
             data_Seq=data_Seq, 
             annotations_file_x=train_data_x, 
@@ -471,14 +468,12 @@ def trainEffNet(parser):
         mimicTest_a = MimicLoader_dataset1_onlyTriage(
             data_CC=data_CC, 
             data_Seq=data_Seq,
-            annotations_file_x=test_a_x, 
-            annotations_file_y=test_a_y,
+            annotations_file=test_a,
             train=False)
         mimicTest_b = MimicLoader_dataset1_onlyTriage(
             data_CC=data_CC, 
             data_Seq=data_Seq,
-            annotations_file_x=test_b_x, 
-            annotations_file_y=test_b_y,
+            annotations_file=test_b, 
             train=False)
     
     
@@ -1202,11 +1197,9 @@ if __name__ == "__main__":
 
     parser.add_option("--train_data_x",  default=None, dest="train_data_x", type=str)
     parser.add_option("--train_data_y",  default=None, dest="train_data_y", type=str)
-    parser.add_option("--test_data_a_x", default=None, dest="test_a_x", type=str)
-    parser.add_option("--test_data_b_x", default=None, dest="test_b_x", type=str)
+    parser.add_option("--test_data_a", default=None, dest="test_a", type=str)
+    parser.add_option("--test_data_b", default=None, dest="test_b", type=str)
 
-    parser.add_option("--test_data_a_y", default=None, dest="test_a_y", type=str)
-    parser.add_option("--test_data_b_y", default=None, dest="test_b_y", type=str)
 
     parser.add_option("--result_name", "-n", default="", dest="result_name", type=str)
     parser.add_option("--loss", default="criterion", dest="loss_function", type=str)

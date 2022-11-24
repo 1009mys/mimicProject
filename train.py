@@ -41,7 +41,7 @@ def trainEffNet(parser):
     batch_size = options.batch_size
     learning_rate = options.learning_rate
     num_epoch = options.num_epoch
-    modelNum = options.model
+    model = options.model
     #class_num = options.class_num
     data = options.data
     result_name = options.result_name
@@ -129,11 +129,10 @@ def trainEffNet(parser):
                              drop_last=False,
                              pin_memory=True
                              )
+                             
     device = torch.device("cuda")
    
-    
-    
-    if modelNum == 'macc':
+    if model == 'macc':
         if only_triage == False:
             encoderModel = encoder(encoder_pretrained=True)
             #print(encoderModel)
@@ -143,7 +142,7 @@ def trainEffNet(parser):
             #print(encoderModel)
             model = MAAC_onlyTriage(encoderModel)
 
-    elif modelNum == 'maccwithTransformer':
+    elif model == 'maccwithTransformer':
         if only_triage == False:
             encoderModel = encoder(encoder_pretrained=True)
             model = MACCwithTransformer(encoderModel)
@@ -554,6 +553,7 @@ def trainEffNet(parser):
 
         acc = accuracy_score(labels, guesses)
         f_score = f1_score(labels, guesses, average='macro')
+        
 
         print(classification_report(labels, guesses, labels=[0,1]))
 
