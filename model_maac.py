@@ -91,8 +91,8 @@ class LinearBLock(nn.Module):
         
         if output == True:
             #self.relu.append(nn.Softmax(dim=None))
-            self.relu.append(nn.Tanh())
-            #self.relu.append(nn.Sigmoid())
+            #self.relu.append(nn.Tanh())
+            self.relu.append(nn.Sigmoid())
         else:
             self.relu.append(nn.ReLU())
         
@@ -104,8 +104,8 @@ class LinearBLock(nn.Module):
             
             if i == r-2 and output == True:
                 #self.relu.append(nn.Softmax(dim=None))
-                self.relu.append(nn.Tanh())
-                #self.relu.append(nn.Sigmoid())
+                #self.relu.append(nn.Tanh())
+                self.relu.append(nn.Sigmoid())
             else:
                 self.relu.append(nn.ReLU())
             
@@ -1161,7 +1161,7 @@ class MAAC(nn.Module):
 
         #x_total = x_total.view(x_total.size(0), -1)
 
-        x_total = (x_total + 1) / 2
+        #x_total = (x_total + 1) / 2
         
 
         return x_total

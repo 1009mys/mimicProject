@@ -1,4 +1,4 @@
-
+from torch.utils.data import Dataset
 
 from email.policy import default
 import sys, getopt
@@ -53,12 +53,10 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
 
         mimic_label_y = pd.read_csv(annotations_file_y)
 
-        
+        print(mimic_label_x)
+        print(mimic_label_y)
 
-        if train==True:
-            self.mimic_labels = mimic_label_x
-        else:
-            self.mimic_labels = mimic_label_x
+        self.mimic_labels = mimic_label_x
 
         self.mimic_labels_y = mimic_label_y
 
@@ -86,7 +84,7 @@ class MimicLoader_dataset1_onlyTriage(Dataset):
         #y = self.mimic_labels.iloc[idx, 53]
         y = self.mimic_labels_y.iloc[idx, 1]
 
-        x_gender = self.mimic_labels.iloc[idx, 53:5]
+        x_gender = self.mimic_labels.iloc[idx, 53:55]
         x_acuity = self.mimic_labels.iloc[idx, 60:65]
         x_sequential = self.mimic_labels.iloc[idx, 245:254]
 
@@ -177,7 +175,7 @@ class MimicLoader_dataset1(Dataset):
         random_seed=42,
         test_size=0.2):
 
-        if annotations_file == None:
+        if annotations_file_x == None or annotations_file_y == None:
             raise ValueError("annotations_file is None")
 
         self.data_CC = data_CC
@@ -189,12 +187,10 @@ class MimicLoader_dataset1(Dataset):
 
         #print(mimic_label)
 
-        
+        print(mimic_label_x)
+        print(mimic_label_y)
 
-        if train==True:
-            self.mimic_labels = mimic_label_x
-        else:
-            self.mimic_labels = mimic_label_x
+        self.mimic_labels = mimic_label_x
 
         self.mimic_labels_y = mimic_label_y
 
@@ -468,7 +464,8 @@ def trainEffNet(parser):
         mimicTrain = MimicLoader_dataset1_onlyTriage(
             data_CC=data_CC, 
             data_Seq=data_Seq, 
-            annotations_file=data, 
+            annotations_file_x=train_data_x, 
+            annotations_file_y=train_data_y,
             transform=train_transformer, 
             train=True)
         mimicTest_a = MimicLoader_dataset1_onlyTriage(
@@ -1203,14 +1200,13 @@ if __name__ == "__main__":
     #parser.add_option("--class_num", "-c", default=11, dest="class_num", type=int)
     parser.add_option("--data", "-d", default=None, dest="data", type=str)
 
-    parser.add_option("--train_data_x", "-d", default=None, dest="train_data_x", type=str)
-    parser.add_option("--train_data_y", "-d", default=None, dest="train_data_y", type=str)
+    parser.add_option("--train_data_x",  default=None, dest="train_data_x", type=str)
+    parser.add_option("--train_data_y",  default=None, dest="train_data_y", type=str)
+    parser.add_option("--test_data_a_x", default=None, dest="test_a_x", type=str)
+    parser.add_option("--test_data_b_x", default=None, dest="test_b_x", type=str)
 
-    parser.add_option("--test_data_a_x", "-d", default=None, dest="test_a_x", type=str)
-    parser.add_option("--test_data_b_x", "-d", default=None, dest="test_b_x", type=str)
-
-    parser.add_option("--test_data_a_y", "-d", default=None, dest="test_a_y", type=str)
-    parser.add_option("--test_data_b_y", "-d", default=None, dest="test_b_y", type=str)
+    parser.add_option("--test_data_a_y", default=None, dest="test_a_y", type=str)
+    parser.add_option("--test_data_b_y", default=None, dest="test_b_y", type=str)
 
     parser.add_option("--result_name", "-n", default="", dest="result_name", type=str)
     parser.add_option("--loss", default="criterion", dest="loss_function", type=str)
